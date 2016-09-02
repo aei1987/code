@@ -8,11 +8,11 @@
 # Site settings
 title: 'Tech Diary'  # Your Title
 tagline: 'Just coding'  # A brief tagline for your site
-email: zhao.zchen9@gmail.com
+email: yinweiniyu@163.com
 description: 
 github_username:  zchen9
 sidebar_image: /images/cover.jpg
-timezone: 'Asia/Shanghai'
+timezone: 'Asia/GuangZhou'
 destination: ./_site
 
 # Build settings
