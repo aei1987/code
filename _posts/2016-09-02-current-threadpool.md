@@ -57,10 +57,10 @@ SynchronousQueue;//同步队列，没有存储能力，作为Executors.newCacheT
 - `handler`：表示当拒绝处理任务时的策略，有以下四种饱和策略：
 
 ```
-ThreadPoolExecutor.AbortPolicy:丢弃任务并抛出RejectedExecutionException异常。
-ThreadPoolExecutor.DiscardPolicy：也是丢弃任务，但是不抛出异常。
-ThreadPoolExecutor.DiscardOldestPolicy：丢弃队列最前面的任务，然后重新尝试执行任务（重复此过程）
-ThreadPoolExecutor.CallerRunsPolicy：由调用线程处理该任务
+ThreadPoolExecutor.AbortPolicy://丢弃任务并抛出RejectedExecutionException异常。
+ThreadPoolExecutor.DiscardPolicy：//也是丢弃任务，但是不抛出异常。
+ThreadPoolExecutor.DiscardOldestPolicy：//丢弃队列最前面的任务，然后重新尝试执行任务（重复此过程）
+ThreadPoolExecutor.CallerRunsPolicy：//由调用线程处理该任务
 ```
 
 #### 2.2 线程池的整体流程
@@ -161,6 +161,30 @@ public class Executors {
 //TODO
 
 #### 2.5线程池的workQueue
+
+`LinkListBlockingQueue`即是链式结构的阻塞队列，比较容易理解，暂不作详细探讨。
+这里重点说明
+
+#### 2.6 线程池的关闭
+
+线程池的关闭我们就要交给ExecutorService了，这也是为什么推荐使用Executors框架来替代线程（即便是单个的线程，也建议使用Executos框架）。
+
+ExecutorService 提供了两个方法
+
+``` java
+/**
+*正常关闭
+*/
+void shutdown();
+
+/**
+*首先关闭当前正在执行的任务，然后返回未启动的任务清单
+**/
+List<Runnable> shutdownNow();
+```
+
+两种关闭的差异来自安全性和响应性。强行关闭响应快，风险大。一般，没特殊要求，建议使用shutdown();
+
 
 ### 3 线程池的配置
 
@@ -434,7 +458,6 @@ class ExecutorQueue extends LinkedTransferQueue<Runnable> {
 [注]：未经许可，严禁转载[文章会随时更新补充...随时修改可能错误的观点]
 
 写一遍文章真累...org
-
 
 
 
