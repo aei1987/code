@@ -74,26 +74,10 @@ public class AboutMe {
 ---
 
 
-<iframe frameborder=”no” border=”0” marginwidth=”0” marginheight=”0” width=300 height=86 src=”http://music.163.com/outchain/player?type=2&id=25706282&auto=0&height=66”></iframe>
-
-
-
-
-<div style="max-width:640px; margin:0 auto 10px;" >
-<div
-style="position: relative;
-width:100%;
-padding-bottom:56.25%;
-height:0;">
-<iframe style="position: absolute;top: 0;left: 0;width: 100%;height: 100%;"  src="https://www.youtube.com/embed/fK_zwl-lnmc" frameborder="0" allowfullscreen></iframe>
-</div>
-</div>
-
-
 
 后记：
 
 下次再补充吧，今天姑且试试水...orz
 
 note：
-试一下音乐播放器吧
+这个不支持嵌入iframe，好吧放弃嵌入音乐
