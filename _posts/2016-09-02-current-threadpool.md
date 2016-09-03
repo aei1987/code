@@ -373,14 +373,21 @@ class ExecutorQueue extends LinkedTransferQueue<Runnable> {
 
 ### 6.总结
 
+使用线程池的时候我们要合理设置参数以满足我们的期望，比如corePoolSize&maxPoolSize&blokingQueueSize，JDK默认的线程池会先初始化corePoolSize的线程数，如果不够，则继续offer满blokingQueueSize，知道达到blokingQueueSize才会增加maxPoolSize。如果我们把blokingQueueSize设置无限大，显然maxPoolSize就没有作用了。对于一些IO密集的任务，我们需要大量的线程提升效率的时候显然是不合理的。
+饱和策略一定也不要忽视，合理的饱和策略处理异常情况才能使我们的程序更加稳定。
+
+**最后，再强调一遍，尽量避免使用无界队列！！！**（我曾经踩过这个坑...，压测的时候程序直接跪了，不停的垃圾回收）
+
 ### 7.延伸阅读：
+
 [江南白衣-Tomcat线程池，更符合大家想象的可扩展线程池](http://calvin1978.blogcn.com/articles/tomcat-threadpool.html)
 [聊聊并发（三）——JAVA线程池的分析和使用](http://www.infoq.com/cn/articles/java-threadPool)
 
 ---
+
 写在后面：
 
-[注]：文章会随时更新补充...
 
+[注]：未经许可，严禁转载[文章会随时更新补充...随时修改可能错误的观点]
 写一遍文章真累...org
 
