@@ -5,8 +5,6 @@ date:  2016-09-03
 categories: [并发编程]
 ---
 
-Java线程池详解
-
 **目录**
 
 * TOC
@@ -62,7 +60,7 @@ ThreadPoolExecutor.DiscardOldestPolicy：丢弃队列最前面的任务，然后
 ThreadPoolExecutor.CallerRunsPolicy：由调用线程处理该任务
 ```
 
-####2.2如何创建一个线程池
+#### 2.2如何创建一个线程池
 
 我们可以通过构造函数初始化一个自己想要的线程池，但是一般不推荐这么做，除非Executors工厂方法构造的线程池不能满足我们的要求。
 下面介绍一下Executos的api创建的线程池的特点：
@@ -163,61 +161,63 @@ public class Executors {
 
 建议使用有界队列，有界队列能增加系统的稳定性和预警能力，可以根据需要设大一点，比如几千。有一次我们组使用的后台任务线程池的队列和线程池全满了，不断的抛出抛弃任务的异常，通过排查发现是数据库出现了问题，导致执行SQL变得非常缓慢，因为后台任务线程池里的任务全是需要向数据库查询和插入数据的，所以导致线程池里的工作线程全部阻塞住，任务积压在线程池里。如果当时我们设置成无界队列，线程池的队列就会越来越多，有可能会撑满内存，导致整个系统不可用，而不只是后台任务出现问题。当然我们的系统所有的任务是用的单独的服务器部署的，而我们使用不同规模的线程池跑不同类型的任务，但是出现这样问题时也会影响到其他任务。
 
-### 4.高能预警
+### 4.线程池的应用与扩展
+很多服务器都扩展的jdk自带的线程池来满足自己的需求，例如tomcat，motan...
+通常，我们自己实现rpc服务器不可避免的用到线程池，参考借鉴他人的代码可以使我们少走很多弯路。
 
-### 5.线程池的应用与扩展
-很多服务器都扩展的jdk自带的线程池来满足自己的需求，例如tomcat，motan，下面贴出motan中使用线程池的源代码供研究学习
+下面贴出motan中使用线程池的源代码供研究学习:
+
 ```
-/*
- *  Copyright 2009-2016 Weibo, Inc.
- *
- *    Licensed under the Apache License, Version 2.0 (the "License");
- *    you may not use this file except in compliance with the License.
- *    You may obtain a copy of the License at
- *
- *        http://www.apache.org/licenses/LICENSE-2.0
- *
- *    Unless required by applicable law or agreed to in writing, software
- *    distributed under the License is distributed on an "AS IS" BASIS,
- *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *    See the License for the specific language governing permissions and
- *    limitations under the License.
- */
+	/*
+	 *  Copyright 2009-2016 Weibo, Inc.
+	 *
+	 *    Licensed under the Apache License, Version 2.0 (the "License");
+	 *    you may not use this file except in compliance with the License.
+	 *    You may obtain a copy of the License at
+	 *
+	 *        http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 *    Unless required by applicable law or agreed to in writing, software
+	 *    distributed under the License is distributed on an "AS IS" BASIS,
+	 *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 *    See the License for the specific language governing permissions and
+	 *    limitations under the License.
+	 */
 
-package com.weibo.api.motan.transport.netty;
+	package com.weibo.api.motan.transport.netty;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+	import java.util.concurrent.Executors;
+	import java.util.concurrent.RejectedExecutionException;
+	import java.util.concurrent.RejectedExecutionHandler;
+	import java.util.concurrent.ThreadFactory;
+	import java.util.concurrent.ThreadPoolExecutor;
+	import java.util.concurrent.TimeUnit;
+	import java.util.concurrent.atomic.AtomicInteger;
 
-import org.jboss.netty.util.internal.LinkedTransferQueue;
+	import org.jboss.netty.util.internal.LinkedTransferQueue;
 
-/**
- * <pre>
- *
- * 代码和思路主要来自于：
- *
- * tomcat :
- * 		org.apache.catalina.core.StandardThreadExecutor
- *
- * java.util.concurrent
- * threadPoolExecutor execute执行策略： 		优先offer到queue，queue满后再扩充线程到maxThread，如果已经到了maxThread就reject
- * 						   		比较适合于CPU密集型应用（比如runnable内部执行的操作都在JVM内部，memory copy, or compute等等）
- *
- * StandardThreadExecutor execute执行策略：	优先扩充线程到maxThread，再offer到queue，如果满了就reject
- * 						      	比较适合于业务处理需要远程资源的场景
- *
- * </pre>
- *
- * @author maijunsheng
- * @version 创建时间：2013-6-20
- *
- */
-public class StandardThreadExecutor extends ThreadPoolExecutor {
+	/**
+	 * <pre>
+	 *
+	 * 代码和思路主要来自于：
+	 *
+	 * tomcat :
+	 * 		org.apache.catalina.core.StandardThreadExecutor
+	 *
+	 * java.util.concurrent
+	 * threadPoolExecutor execute执行策略： 		优先offer到queue，queue满后再扩充线程到maxThread，如果已经到了maxThread就reject
+	 * 						   		比较适合于CPU密集型应用（比如runnable内部执行的操作都在JVM内部，memory copy, or compute等等）
+	 *
+	 * StandardThreadExecutor execute执行策略：	优先扩充线程到maxThread，再offer到queue，如果满了就reject
+	 * 						      	比较适合于业务处理需要远程资源的场景
+	 *
+	 * </pre>
+	 *
+	 * @author maijunsheng
+	 * @version 创建时间：2013-6-20
+	 *
+	 */
+	public class StandardThreadExecutor extends ThreadPoolExecutor {
 
 	public static final int DEFAULT_MIN_THREADS = 20;
 	public static final int DEFAULT_MAX_THREADS = 200;
@@ -357,21 +357,30 @@ class ExecutorQueue extends LinkedTransferQueue<Runnable> {
 
 ```
 
-### 6.一些问题
+### 5.一些问题
 
-#### 6.1什么时候线程池能够最有效的提升性能？
+#### 5.1什么时候线程池能够最有效的提升性能？
 
 >当大量任务相互独立且同构时才能体现出程序的工作负载分配到多个任务带来的真正性能提升。所以如果任务队列里面的任务有相互依赖，或者存在不同的任务，我们需要谨慎的处理。
 >netty中的线程池就会同时处理IO任务和少量的定时任务，我们可以通过分配适当的执行比例ratio来优化。
 >当线程中的任务出现依赖的情况，我们尤其要适当的增大线程池的大小，以防止任务阻塞，造成的线程饥饿。
 
-#### 6.2 如何处理线程池中部分运行时间较长的任务？
+#### 5.2 如何处理线程池中部分运行时间较长的任务？
 
 >如果线程池中出现运行时间较长的任务，即使不出现死锁，线程的响应速度也会变得非常糟糕。执行时间较长的任务不仅会造成线程池的阻塞，甚至还会增加执行时间较短的任务的服务时间。
 >有一项技术可以缓存执行时间较长的任务的影响，即限定任务等待资源的时间，而不要无限制的等待。如果等待时间超时，那么可以把任务标志为失败，然后终止任务或者将任务重新放入队列。
 >当然如果线程池中总是充满被阻塞的任务，那么也很有可能说明线程池的太小。
 
-### 7.总结
+### 6.总结
 
-延伸阅读：
+### 7.延伸阅读：
+[江南白衣-Tomcat线程池，更符合大家想象的可扩展线程池](http://calvin1978.blogcn.com/articles/tomcat-threadpool.html)
+[聊聊并发（三）——JAVA线程池的分析和使用](http://www.infoq.com/cn/articles/java-threadPool)
+
+---
+写在后面：
+
+[注]：文章会随时更新补充...
+
+写一遍文章真累...org
 
