@@ -5,6 +5,8 @@ date:  2016-09-03
 categories: [并发编程]
 ---
 
+Java线程池的正确入坑指南
+
 **目录**
 
 * TOC
@@ -65,7 +67,7 @@ ThreadPoolExecutor.CallerRunsPolicy：由调用线程处理该任务
 
 了解完线程池的参数，我们看一张线程池的架构图，非很好的帮助我们深入理解Java的线程池：
 
-![](/code/images/threadPoolFramwork.png)
+![](http://zhizus.com/code/images/threadPoolFramworkNew.png)
 
 **ExecuteService简单的理解可以认为是：**
 
@@ -77,7 +79,7 @@ ThreadPoolExecutor.CallerRunsPolicy：由调用线程处理该任务
 
 下面，借用[Qcon](http://www.infoq.com/cn/articles/java-threadPool)一张流程图来说说线程池的处理流程：
 
-![](/code/images/threadPoolFlow.png)
+![](http://zhizus.com/code/images/threadPoolFlow.jpg)
 
 
 
@@ -189,7 +191,7 @@ public class Executors {
 - **任务的优先级**：高，中和低。
 - **任务的执行时间**：长，中和短。
 - **任务的依赖性**：是否依赖其他系统资源，如数据库连接。
--
+
 任务性质不同的任务可以用不同规模的线程池分开处理。CPU密集型任务配置尽可能小的线程，如配置Ncpu+1个线程的线程池。IO密集型任务则由于线程并不是一直在执行任务，则配置尽可能多的线程，如2*Ncpu。混合型的任务，如果可以拆分，则将其拆分成一个CPU密集型任务和一个IO密集型任务，只要这两个任务执行的时间相差不是太大，那么分解后执行的吞吐率要高于串行执行的吞吐率，如果这两个任务执行时间相差太大，则没必要进行分解。我们可以通过Runtime.getRuntime().availableProcessors()方法获得当前设备的CPU个数。
 
 `优先级不同的任务可以使用优先级队列PriorityBlockingQueue来处理`。它可以让优先级高的任务先得到执行，需要注意的是如果一直有优先级高的任务提交到队列里，那么优先级低的任务可能永远不能执行。
@@ -430,7 +432,11 @@ class ExecutorQueue extends LinkedTransferQueue<Runnable> {
 写在后面：
 
 [注]：未经许可，严禁转载[文章会随时更新补充...随时修改可能错误的观点]
+
 写一遍文章真累...org
+
+
+
 
 
 
