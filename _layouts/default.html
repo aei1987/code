@@ -29,6 +29,18 @@
     <!-- 144x144 (precomposed) for iPad 3rd and 4th generation -->
     <link rel="apple-touch-icon-precomposed" sizes="144x144" href="{{ site.baseurl }}/images/apple-touch-icon-144x144-chen.png">
 
+    <!--百度统计-->
+    <script>
+      var _hmt = _hmt || [];
+      (function() {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?6f0df560f0fd85abcffbf2a72aed89e4";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+      })();
+    </script>
+
+
   </head>
   <body>
     
@@ -40,6 +52,6 @@
     <script src="//cdn.bootcss.com/highlight.js/9.2.0/highlight.min.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
 
-    {% include google_analytics.html %}
+    <!--{% include google_analytics.html %}-->
   </body>
 </html>

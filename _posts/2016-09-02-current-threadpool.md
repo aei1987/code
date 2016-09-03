@@ -65,7 +65,7 @@ ThreadPoolExecutor.CallerRunsPolicy：//由调用线程处理该任务
 
 #### 2.2 线程池的整体流程
 
-了解完线程池的参数，我们看一张线程池的架构图，非很好的帮助我们深入理解Java的线程池：
+了解完线程池的参数，下面这张线程架构图能够很好的帮助我们深入理解Java的线程池：
 
 ![](http://zhizus.com/code/images/threadPoolFramworkNew.png)
 
@@ -144,8 +144,11 @@ public class Executors {
 
 }
 ```
+####  2.3如何通过线程池提交一个task
 
-#### 2.3对比newFixedThreadPool&newCachedThreadPool
+TODO
+
+#### 2.4对比newFixedThreadPool&newCachedThreadPool
 
 了解newFixedThreadPool&newCachedThreadPool的区别有助于我们更好的理解和使用线程池，那么这两者到底有什么不同呢？
 
@@ -157,13 +160,19 @@ public class Executors {
 
 这里的合适的初始化值主要指，线程的corePoolSize，maximumPoolSize，workerQueue&handler，这里的workerQueue和handler尤为重要，`最好不要使用无界队列。使用有界队列最坏的情况可能会造成部分任务无法响应，但至少能保证大部分的任务正常执行。而且我们还可以定制自己的handler（饱和策略）来处理这些处理不了的任务。`
 
-#### 2.4线程池的饱和策略
+#### 2.5线程池的饱和策略
 //TODO
 
-#### 2.5线程池的workQueue
+#### 2.6线程池的workQueue
 
-`LinkListBlockingQueue`即是链式结构的阻塞队列，比较容易理解，暂不作详细探讨。
-这里重点说明
+线程池基本的任务排队方法有三种：无界队列，有界队列，和同步移交。
+
+无界队列&有界队列对应的都是`LinkListBlockingQueue`，即是链式结构的阻塞队列，比较容易理解，暂不作详细探讨。
+
+这里重点说明`SynchronousQueue`：基于BlockingQueue实现的，但实际上它不是一个真正的队列。因为他不会为队列中的元素维护存储空间，与其他的队列不同，它维护一组线程，这些线程在等待着把元素加入或者移除队列。这种队列的实现看似奇怪，但由于它可以直接交付工作，从而降低了数据从生产移动到消费者的延迟。直接交付的方式还可以将更多关于任务的状态反馈给生产者。
+
+**注意，仅当有足够的消费者，并且总有一个消费者准备好获取交付的工作时，才适合使用同步队列。（只有当线程池是无界队列或者可以拒绝任务，同步队列才有使用价值）**
+[newCacheThreadPool线程数量没有上线，所以newCacheThreadPool工厂方法使用了SynchronousQueue，]
 
 #### 2.6 线程池的关闭
 
@@ -185,6 +194,20 @@ List<Runnable> shutdownNow();
 
 两种关闭的差异来自安全性和响应性。强行关闭响应快，风险大。一般，没特殊要求，建议使用shutdown();
 
+虽然调用shutdown程序会在关闭前执行完所有启动的线程，但是有的时候我们希望队列中所有的task都不要漏掉，不妨加一个个Jvm hook：
+
+```
+Runtime.getRuntime().addShutdownHook(new Thread(){
+   public void run(){
+    try{
+     //处理一些未完成的工作
+    }catch (Exception e) {
+     e.printStackTrace();
+    }
+   }
+  });
+```
+
 
 ### 3 线程池的配置
 
@@ -202,8 +225,8 @@ List<Runnable> shutdownNow();
 因为很显然，线程等待时间所占比例越高，需要越多线程。线程CPU时间所占比例越高，需要越少线程。
 
 下面举个例子：
-比如平均每个线程CPU运行时间为0.5s，而线程等待时间（非CPU运行时间，比如IO）为1.5s，CPU核心数为8，那么根据上面这个公式估算得到：((0.5+1.5)/0.5)*8=32。这个公式进一步转化为：
-最佳线程数目 = （线程等待时间与线程CPU时间之比 + 1）* CPU数目
+比如平均每个线程CPU运行时间为0.5s，而线程等待时间（非CPU运行时间，比如IO）为1.5s，CPU核心数为8，那么根据上面这个公式估算得到：`((0.5+1.5)/0.5)*8=32`。这个公式进一步转化为：
+**最佳线程数目 = （线程等待时间与线程CPU时间之比 + 1）* CPU数目**
 
 这个只是估算值，实际通过测试调优得出合理值。
 
@@ -442,6 +465,11 @@ class ExecutorQueue extends LinkedTransferQueue<Runnable> {
 使用线程池的时候我们要合理设置参数以满足我们的期望，比如corePoolSize&maxPoolSize&blokingQueueSize，`JDK默认的线程池会先初始化corePoolSize的线程数，如果不够，则继续offer满blokingQueueSize，直到达到blokingQueueSize才会增加maxPoolSize`。如果我们把blokingQueueSize设置无限大，显然maxPoolSize就没有作用了。对于一些IO密集的任务，我们需要大量的线程提升效率的时候显然是不合理的。
 
 饱和策略一定也不要忽视，合理的饱和策略处理异常情况才能使我们的程序更加稳定。
+
+线程池的大小一定要分情况讨论，首先考虑CPU密集或者IO密集，其次考虑任务是否有依赖关系，有依赖关系的需要稍稍设置大些，以免造成线程饥饿死锁。是否有长时间任务等等。
+
+生产消费者模式是个好模式，有着广泛的应用。
+
 
 **最后，再强调一遍，尽量避免使用无界队列！！！**（本渣曾踩过这个坑...，压测的时候程序直接跪了）
 
