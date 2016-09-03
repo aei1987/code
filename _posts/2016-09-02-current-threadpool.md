@@ -14,12 +14,15 @@ Java线程池详解
 
 ---
 ### 1.概述
+
 好的软件设计不建议手动创建和销毁线程。线程的创建和销毁是非常耗 CPU 和内存的，因为这需要 JVM 和操作系统的参与。64位 JVM 默认线程栈是大小1 MB。这就是为什么说在请求频繁时为每个小的请求创建线程是一种资源的浪费。线程池可以根据创建时选择的策略自动处理线程的生命周期。重点在于：在资源（如内存、CPU）充足的情况下，线程池没有明显的优势，否则没有线程池将导致服务器奔溃。有很多的理由可以解释为什么没有更多的资源。例如，在拒绝服务（denial-of-service）攻击时会引起的许多线程并行执行，从而导致线程饥饿（thread starvation）。除此之外，手动执行线程时，可能会因为异常导致线程死亡，程序员必须记得处理这种异常情况。
 
 即使在你的应用中没有显式地使用线程池，但是像 Tomcat、Undertow这样的web服务器，都大量使用了线程池。所以了解线程池是如何工作的，怎样调整，对系统性能优化非常有帮助。
 
 ### 2线程池的基础知识
+
 #### 2.1线程池的构造方法
+
 Java提供了Executor框架提供了一套完善的多线程编程api，包括对线程生命周期，统计信息，程序管理机制，性能监控等功能。
 
 ``` java
@@ -42,6 +45,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 keepAliveTime：表示线程没有任务执行时最多保持多久时间会终止。默认情况下，只有当线程池中的线程数大于corePoolSize时，keepAliveTime才会起作用，直到线程池中的线程数不大于corePoolSize，即当线程池中的线程数大于corePoolSize时，如果一个线程空闲的时间达到keepAliveTime，则会终止，直到线程池中的线程数不超过corePoolSize。但是如果调用了allowCoreThreadTimeOut(boolean)方法，在线程池中的线程数不大于corePoolSize时，keepAliveTime参数也会起作用，直到线程池中的线程数为0；
 - `unit`：参数keepAliveTime的时间单位，有7种取值，在TimeUnit类中有7种静态属性：
 - `workQueue`：一个阻塞队列，用来存储等待执行的任务，这个参数的选择也很重要，会对线程池的运行过程产生重大影响，一般来说，这里的阻塞队列有以下几种选择：
+
 ```
 ArrayBlockingQueue;//
 LinkedBlockingQueue;//链式结构的阻塞队列，作为Executors.newFixThreadPool()生成线程池的默认队列，入列出列快，但是同时会产生Node对象
@@ -57,9 +61,12 @@ ThreadPoolExecutor.DiscardPolicy：也是丢弃任务，但是不抛出异常。
 ThreadPoolExecutor.DiscardOldestPolicy：丢弃队列最前面的任务，然后重新尝试执行任务（重复此过程）
 ThreadPoolExecutor.CallerRunsPolicy：由调用线程处理该任务
 ```
+
 ####2.2如何创建一个线程池
+
 我们可以通过构造函数初始化一个自己想要的线程池，但是一般不推荐这么做，除非Executors工厂方法构造的线程池不能满足我们的要求。
 下面介绍一下Executos的api创建的线程池的特点：
+
 ``` java
 
 public class Executors {
@@ -108,7 +115,9 @@ public class Executors {
 
 }
 ```
+
 #### 2.3对比newFixedThreadPool&newCachedThreadPool
+
 了解newFixedThreadPool&newCachedThreadPool的区别有助于我们更好的理解和使用线程池，那么这两者到底有什么不同呢？
 默认newCachedThreadPool会创建一个corePoolSize为0，maximumPoolSize为Integer.maxValue，队列为SynchronousQueue的线程池，默认60s回收一次空闲线程。这意味着newCachedThreadPool创建的线程池能够自动适应，有效的避免了由于任务依赖而造成的饥饿问题。线程编程实战书上推荐为默认的选择。
 当然，newCachedThreadPool也会有缺点，当程序处理速度跟不上任务进入队列的速度时候会造成大量的线程，可能会耗完程序CPU。
@@ -123,6 +132,7 @@ public class Executors {
 ### 3 线程池的配置
 
 #### 3.1线程池大小
+
 一般说来，大家认为线程池的大小经验值应该这样设置：（其中N为CPU的个数）
 **如果是CPU密集型应用，则线程池大小设置为N+1**
 **如果是IO密集型应用，则线程池大小设置为2N+1**
@@ -344,18 +354,24 @@ class ExecutorQueue extends LinkedTransferQueue<Runnable> {
 		return super.offer(o);
 	}
 }
+
 ```
 
 ### 6.一些问题
+
 #### 6.1什么时候线程池能够最有效的提升性能？
+
 >当大量任务相互独立且同构时才能体现出程序的工作负载分配到多个任务带来的真正性能提升。所以如果任务队列里面的任务有相互依赖，或者存在不同的任务，我们需要谨慎的处理。
 >netty中的线程池就会同时处理IO任务和少量的定时任务，我们可以通过分配适当的执行比例ratio来优化。
 >当线程中的任务出现依赖的情况，我们尤其要适当的增大线程池的大小，以防止任务阻塞，造成的线程饥饿。
 
 #### 6.2 如何处理线程池中部分运行时间较长的任务？
+
 >如果线程池中出现运行时间较长的任务，即使不出现死锁，线程的响应速度也会变得非常糟糕。执行时间较长的任务不仅会造成线程池的阻塞，甚至还会增加执行时间较短的任务的服务时间。
 >有一项技术可以缓存执行时间较长的任务的影响，即限定任务等待资源的时间，而不要无限制的等待。如果等待时间超时，那么可以把任务标志为失败，然后终止任务或者将任务重新放入队列。
 >当然如果线程池中总是充满被阻塞的任务，那么也很有可能说明线程池的太小。
+
 ### 7.总结
 
 延伸阅读：
+
