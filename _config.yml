@@ -10,7 +10,7 @@ title: 'Tech Diary'  # Your Title
 tagline: 'Just coding'  # A brief tagline for your site
 email: yinweiniyu@163.com
 description: 
-github_username:  zchen9
+github_username:  dempeZheng
 sidebar_image: /images/cover.jpg
 timezone: 'Asia/GuangZhou'
 destination: ./_site
@@ -30,3 +30,6 @@ permalink: :title
 paginate: 15
 paginate_path: "page:num"
 gems: [jekyll-paginate]
+
+
+port: 5001
