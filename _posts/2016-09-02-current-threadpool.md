@@ -144,11 +144,8 @@ public class Executors {
 
 }
 ```
-####  2.3如何通过线程池提交一个task
 
-TODO
-
-#### 2.4对比newFixedThreadPool&newCachedThreadPool
+#### 2.3对比newFixedThreadPool&newCachedThreadPool
 
 了解newFixedThreadPool&newCachedThreadPool的区别有助于我们更好的理解和使用线程池，那么这两者到底有什么不同呢？
 
@@ -160,10 +157,27 @@ TODO
 
 这里的合适的初始化值主要指，线程的corePoolSize，maximumPoolSize，workerQueue&handler，这里的workerQueue和handler尤为重要，`最好不要使用无界队列。使用有界队列最坏的情况可能会造成部分任务无法响应，但至少能保证大部分的任务正常执行。而且我们还可以定制自己的handler（饱和策略）来处理这些处理不了的任务。`
 
-#### 2.5线程池的饱和策略
-//TODO
+#### 2.4线程池的饱和策略
 
-#### 2.6线程池的workQueue
+当有界队列被填满了后，饱和策略开始发挥作用(`如果某个任务被提交到某一个已经被关闭的Executor时，也会用到饱和策略`)。ThreadPoolExecutor的饱和策略可以通过setRejectedExecutionHandler来修改。JDK提供几种不同的RejectedExecutionHandler实现，每种实现都包含不同的饱和策略：AbortPolicy，CallerRunsPolicy，DiscardPlolicy和DiscardOldestPolicy。
+**"中止（Abort）"策略是默认的饱和策略，该策略将抛出未检查的RejectExecutionException**，调用者可以捕获这个异常，然后根据需求编写自己的处理代码。
+
+当新提交的任务无法保存到该队列。“抛弃(Discard)”策略将会悄悄的抛弃该任务。
+
+“抛弃最旧的（Discard-Oldest）”将会抛弃下一个将被执行的任务，然后尝试重新提交新的任务。**如果工作队列是一个优先队列，那么“抛弃最旧” 的饱和策略则是抛弃优先级最高的任务，因此最好不要将“抛弃最旧的”饱和策略和优先队列一起使用**。
+
+“调用者运行（Caller-Runs）”实现了一种调节机制，该策略既不会抛弃任务，也不会抛出异常，而是将某些任务回退调用者，从而降低新任务流量。它不会在线程池的某个线程中执行新提交的任务，而是在一个调用了execute的线程中执行该任务。
+我们可以将WebServer为例说明“调用者运行（Caller-Runs）”饱和策略。
+当线程池中所有的线程都被占用，并且工作队列被填满后，下一个任务会调用executor时在主线程中执行。由于执行任务需要一定的时间，因此主线程至少在一段时间内不能提交任何任务，从而使得工作者线程有时间来处理正在执行的任务。在这期间主线程不会调用accept，因此到达的请求将被保存在TCP层的队列中而不是在应用程序的队列中。如果持续过载，那么TCP层将最终发现他的请求队列被填满，因此同样会开始抛弃请求。**当服务器过载时，这种过载情况会逐渐想外蔓延开来--从线程池到工作队列到应用程序到TCP层队列，最终到达客户端，导致服务器在高负载下实现一种平缓的性能降低。**
+
+调用者运行饱和策略示例：
+
+``` java
+ThreadPoolExecutor executor = new ThreadPoolExecutor(N_THREADS, N_HREADS, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runable>(CAPCITY));
+executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRansPolicy());
+```
+
+#### 2.5线程池的workQueue
 
 线程池基本的任务排队方法有三种：无界队列，有界队列，和同步移交。
 
