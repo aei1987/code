@@ -16,7 +16,9 @@ categories: [IM开发日记]
 
 最近比较感兴趣即时通讯，自己也也开始折腾折腾IM的服务端实现，顺便也记下折腾的笔记。
 当然要实现稳定功能完善的IM并非易事，整个探索实现的过程可能会持续的迭代优化，甚至可能会否定推到之前的设计。故包括IM的笔记可能也会持续的更改。
-项目地址：https://github.com/dempeZheng/ocean
+
+项目地址：[https://github.com/dempeZheng/ocean](https://github.com/dempeZheng/ocean)
+
 
 ### 通讯协议
 
@@ -77,14 +79,30 @@ P2P多见于局域网内聊天工具，典型的应用有:飞鸽传书。这类�
 消息请求都经过服务器中转使得服务器掌握了消息的控制权，对消息的控制能力强，故它能支持很多设备直连支持不好的业务，例如离线消息，群组，聊天室，垃圾消息过滤。这也是目前大部分互联网选用服务器中转的原因。
 
 ### 架构
-这个是一个比较大的问题后续会有专门的文章来讨论。
+采用分层的设计，可以初步分为链接层，业务层，数据访问层。
+
+![](/code/images/im/chat-info.png)
+
+- ChatServer：连接层。剥离即时通讯的核心逻辑，即维护连接和消息投递(后续可能进一步拆分，将Connetor&MessageService拆分成单独服务)，保证单一职责，便于实现，扩展及维护。通过TCP长连接保持并维护连接，发送投递消息。不关心具体的业务逻辑实现，业务逻辑实现直接交由LogicService层处理。
+- HttpApiServer：抛却核心业务通讯的业务，其他的所有不依赖通讯的业务都可以用过Rest接口提供服务。(Http协议作为广泛使用的协议，有非常成熟的方案，利于开发测试联调)
+- LogicService：业务逻辑层，基于MotanRPC暴露处理的基础Service能力，作为上层ChatServer&HttpApiServer提供基础能力支持。无状态的服务，可无限水平扩展。
+- SessionStore：提供存储的能力，主要是消息的存储
 
 ### 技术选型
-
+- ChatServer：netty+mqtt
+- HttpApiServer：SpringBoot, MotanRPC Client
+- LogicService:MotanRPC Server
 
 ### 设计要点
 
+
+
 ### 后记
+
+### 延伸阅读：
+
+[陌陌CTO分享-高可用即时通讯架构(非常值得一听)](http://www.infoq.com/cn/presentations/high-availability-instant-communication-architecture)
+
 ----
 先写到这里后续再补充。
 
