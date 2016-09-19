@@ -400,11 +400,13 @@ public class NettyClient extends AbstractPoolClient implements StatisticCallback
 这个时候我们又需要回到上面的NettyClient中去看NettyChannelHandler了。
 收到服务器的返回的response的时候会触发NettyChannelHandler的handle方法，而handle方法中首先就是:
 通过消息id，移除callbackMap中的对象。
+
 ``` java
 NettyResponseFuture responseFuture = NettyClient.this.removeCallback(response.getRequestId());
 ```
 
 最后，我们看NettyClient中的TimeoutMonitor,它所做的的事情就是定时清理callbackMap超时的request上下文,NettyClient在初始化的时候就初始化了这个timeoutMonitor
+
 ``` java
 public NettyClient(URL url) {
 			timeMonitorFuture = scheduledExecutor.scheduleWithFixedDelay(
@@ -413,6 +415,7 @@ public NettyClient(URL url) {
 				TimeUnit.MILLISECONDS);
 	}
 ```
+
 
 接下来我们总结一下motan中callbackMap的逻辑：
 
