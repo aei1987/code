@@ -308,4 +308,11 @@ public abstract class HALBProxy {
 
 
 ```
+
+#### 小结
+总的来说负载均衡部分还算比较简单，LocalFirst优先读取本机的服务这个策略还是很不错的。
+
 ---
+
+关于更多loadbalance请看[老外的文章(直戳loadbalance本质)](http://tutorials.jenkov.com/software-architecture/load-balancing.html)
+
