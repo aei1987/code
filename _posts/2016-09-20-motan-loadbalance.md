@@ -100,7 +100,9 @@ public interface LoadBalance<T> {
     // FailoverHaStrategy会使用到这个，多线程场景
     void selectToHolder(Request request, List<Referer<T>> refersHolder);
 
-    // ??
+    // ?? 仅仅属于WeightLoadBalance的特性，定义在最上层接口是否合适？？
+    //cluster.getLoadBalance().setWeightString(weights); 这里使用的时候判断一下类型，对WeightLoadBalance这种类型单独处理向下转型是否可以？
+    // 或者是否有其他更好的办法？？
     void setWeightString(String weightString);
 
 }
