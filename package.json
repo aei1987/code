@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/zchen9/code.git"
+    "url": "git+https://github.com/dempeZheng/code.git"
   },
   "author": "zchen9",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/zchen9/code/issues"
+    "url": "https://github.com/dempeZheng/code/issues"
   },
-  "homepage": "https://github.com/zchen9/code#readme",
+  "homepage": "https://github.com/dempeZheng/code#readme",
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-autoprefixer": "^3.1.0",
