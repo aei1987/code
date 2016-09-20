@@ -182,5 +182,130 @@ public abstract class AbstractLoadBalance<T> implements LoadBalance<T> {
 
 子类重写`doSelect(Request request)`方法就是实现自己的策略。(里面还有一个doSelectToHolder(Request request, List<Referer<T>> refersHolder)方法，这个FailoverHaStrategy会涉及到，我们下一篇在讨论)
 
+看了一遍各种策略具体实现，貌似没什么好说的。有兴趣可以直接看motan源代码。
+
+下面贴出一个另外一种的实现，仅供学习参考，`非线程安全`，使用时需要注意.
+
+``` java
+public class LoadBalance {
+    private int i = 0;
+    private int cw = 0;
+    private int[] weight;
+    private int count;
+
+    public LoadBalance(int count) {
+        this.count = count;
+    }
+
+    public LoadBalance(int[] weight) {
+        this.count = weight.length;
+        this.weight = weight;
+    }
+
+    public int hashIndex(String key) {
+        long hash = 5381L;
+
+        int index;
+        for(index = 0; index < key.length(); ++index) {
+            hash = (hash << 5) + hash + (long)key.charAt(index);
+            hash &= 4294967295L;
+        }
+        index = (int)hash % this.count;
+        index = Math.abs(index);
+        return index;
+    }
+    public int roundIndexByWeight() {
+        do {
+            this.i = (this.i + 1) % this.count;
+            if(this.i == 0) {
+                this.cw -= this.gcd();
+                if(this.cw <= 0) {
+                    this.cw = this.max();
+                    if(this.cw == 0) {
+                        return 0;
+                    }
+                }
+            }
+        } while(this.weight[this.i] < this.cw);
+        return this.i;
+    }
+    public int roundIndex() {
+        int j = this.i;
+        j = (j + 1) % this.count;
+        this.i = j;
+        return this.i;
+    }
+    private int gcd() {
+        BigInteger value = null;
+        if(this.weight.length > 0) {
+            value = BigInteger.valueOf((long)this.weight[this.i]);
+        }
+        for(int i = 0; i < this.weight.length - 1; ++i) {
+            BigInteger tmp = BigInteger.valueOf((long)this.weight[i]);
+            tmp = tmp.gcd(BigInteger.valueOf((long)this.weight[i + 1]));
+            if(value.compareTo(tmp) > 0) {
+                value = tmp;
+            }
+        }
+        if(null != value) {
+            return value.intValue();
+        } else {
+            return 0;
+        }
+    }
+    private int max() {
+        int value = 0;
+        if(this.weight.length > 0) {
+            value = this.weight[0];
+        }
+
+        for(int i = 0; i < this.weight.length - 1; ++i) {
+            int tmp = this.weight[i];
+            if(value < tmp) {
+                value = tmp;
+            }
+        }
+        return value;
+    }
+}
+```
+
+``` java
+public abstract class HALBProxy {
+    private HALBProxy.Strategy strategy;
+    private LoadBalance lb;
+    public HALBProxy(HALBProxy.Strategy strategy) {
+        this.logger = Logger.getLogger(this.getClass());
+        this.availServers = new CopyOnWriteArrayList();
+        this.unavailServers = new CopyOnWriteArrayList();
+        this.listeners = new HashSet();
+        this.strategy = strategy;
+    }
+    public int getIndex() {
+        switch(strategy) {
+        case 1:
+            return 0;
+        case 2:
+            return this.lb.roundIndex();
+        case 3:
+            return this.lb.roundIndexByWeight();
+        default:
+            return 0;
+        }
+    }
+    public int getIndex(String key) {
+        return this.lb.hashIndex(key);
+    }
+     public static enum Strategy {
+        DEFAULT,
+        RR,
+        WRR,
+        HASH;
+        private Strategy() {
+        }
+    }
+}
+
+
+```
 ---
-今天先到这，后续会根据心情分析负载均衡策略的实现...
