@@ -7,6 +7,7 @@ categories: [Motan源码解读]
 
 Motan源码解读-源码结构
 
+旨在对motan包结构熟悉，顺带会根据包结构列出系列文章的索引。
 
 ### motan包结构
 
@@ -42,7 +43,7 @@ Motan源码解读-源码结构
                 ├─exception // ⑥异常
                 ├─filter //⑦过滤器
                 ├─log //⑧日志
-                ├─protocol //⑨协议部分
+                ├─protocol //⑨责点到点的通讯(有别于我们理解的protocol)
                 │  ├─injvm
                 │  ├─rpc
                 │  └─support
@@ -68,4 +69,8 @@ Motan源码解读-源码结构
 
 ⑦[motan-过滤器](http://zhizus.com/code/motan-filter)
 
+⑨[motan-protocol](http://zhizus.com/code/motan-protocol)
 
+#### motan-transport-netty
+
+⑨[motan-netty-client异步消息](http://zhizus.com/code/motan-clientMessage)
