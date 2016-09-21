@@ -161,8 +161,11 @@ public abstract class AbstractProtocol implements Protocol {
 ```
 
 如果我们需要实现自己的Export或者Referer，我们继承AbstractProtocol这个方法覆盖里面的两个抽象方法就好了。
+
 比如说，我们希望motan支持protobuf或者thrift，那么我们继承AbstractProtocol这个抽象类，分别实现createExporter，createReferer方法。
+
 那么这两个方法怎么实现呢？
+
 我们来看motan给出的一个默认实现：
 
 ``` java
