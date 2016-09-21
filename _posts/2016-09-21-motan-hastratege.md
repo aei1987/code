@@ -7,7 +7,6 @@ categories: [Motan源码解读]
 
 Motan源码解读-容错策略
 
-
 ### Motan的容错策略
 >Motan 在集群调用失败时，提供了两种容错方案，并支持自定义扩展。 高可用集群容错策略在Client端生效，因此需在Client端添加配置 目前支持的集群容错策略有：
 
@@ -186,4 +185,4 @@ public class FailoverHaStrategy<T> extends AbstractHaStrategy<T> {
 
 -----
 后记：
-希望有时间可以看Hystrix的实现
+希望有时间可以看Hystrix的实现，
