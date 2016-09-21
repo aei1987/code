@@ -5,8 +5,7 @@ date:  2016-09-21
 categories: [Motan源码解读]
 ---
 
-
-## Motan源码解读-Filter
+Motan源码解读-Filter
 
 很多服务都有filter这个概念，filter就像在管道前的过滤器，只要通过管道的请求必须先经过过滤器。
 过滤器可以做很多事情，类似权限控制，限流，统计，上报，监控等等。有些为服务架构会把filter单独抽出来作为getway服务。
