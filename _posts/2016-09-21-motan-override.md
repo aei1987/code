@@ -23,41 +23,49 @@ Motan源码解读-源码结构
 
 #### motan-core
 
-
 ```
 └─com
     └─weibo
         └─api
             └─motan
                 ├─cluster
-                │  ├─ha //[motan-容灾策略](http://zhizus.com/code/motan-hastratege)
-                │  ├─loadbalanc // [motan-负载均衡](http://zhizus.com/code/motan-hastratege)
+                │  ├─ha //①容灾策略
+                │  ├─loadbalanc //②负载均衡
                 │  └─support
-                ├─codec // 编解码
+                ├─codec //③编解码
                 ├─common
-                ├─config // 配置
+                ├─config //④配置
                 │  ├─annotation
                 │  └─handler
                 ├─core
-                │  └─extension //SPI机制扩展
-                ├─exception // 异常
-                ├─filter // 过滤器
-                ├─log // 日志
-                ├─protocol // 协议部分
+                │  └─extension //⑤ SPI机制扩展
+                ├─exception // ⑥异常
+                ├─filter //⑦过滤器
+                ├─log //⑧日志
+                ├─protocol //⑨协议部分
                 │  ├─injvm
                 │  ├─rpc
                 │  └─support
-                ├─proxy //代理
+                ├─proxy //⑩代理
                 │  └─spi
-                ├─registry //服务注册
+                ├─registry //⑪服务注册
                 │  └─support
                 │      └─comman
                 ├─rpc
-                ├─serialize //序列化
+                ├─serialize //⑫序列化
                 ├─switcher
                 ├─transport
                 │  └─support
                 └─util
 ```
-
 这个包是motan的核心实现，里面的大部分代码，接下的文章都会涉及到。
+
+①[motan-容灾策略](http://zhizus.com/code/motan-hastratege)
+
+②[motan-负载均衡](http://zhizus.com/code/motan-loadbalance)
+
+⑤[motan-SPI机制扩展](http://zhizus.com/code/motan-spi)
+
+⑦[motan-过滤器](http://zhizus.com/code/motan-filter)
+
+
