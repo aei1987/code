@@ -46,12 +46,15 @@ public interface Protocol {
 
 ```
 - Provider
+
 > 服务提供方，通常可以认为是server端
 
 - Exporter
+
 >服务提供Provider暴露出去就变成Exporter，服务使用方（客户端）可以调用暴露出去的Provider
 
 - Referer
+
 > 引用服务，引用的服务会通过配置去调用服务端暴露的服务
 
 现在我们应该会有一定的认识，对于protocol。不管是暴露服务还是引用服务都是通过protocol来实现的。可以说他是学习motan的一个入口。
