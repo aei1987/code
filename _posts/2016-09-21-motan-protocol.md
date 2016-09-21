@@ -174,20 +174,16 @@ public abstract class AbstractProtocol implements Protocol {
 ``` java
 @SpiMeta(name = "motan")
 public class DefaultRpcProtocol extends AbstractProtocol {
-
     // 多个service可能在相同端口进行服务暴露，因此来自同个端口的请求需要进行路由以找到相应的服务，同时不在该端口暴露的服务不应该被找到
     private Map<String, ProviderMessageRouter> ipPort2RequestRouter = new HashMap<String, ProviderMessageRouter>();
-
     @Override
     protected <T> Exporter<T> createExporter(Provider<T> provider, URL url) {
         return new DefaultRpcExporter<T>(provider, url);
     }
-
     @Override
     protected <T> Referer<T> createReferer(Class<T> clz, URL url, URL serviceUrl) {
         return new DefaultRpcReferer<T>(clz, url, serviceUrl);
     }
-
     /**
      * rpc provider
      *
@@ -197,29 +193,24 @@ public class DefaultRpcProtocol extends AbstractProtocol {
     class DefaultRpcExporter<T> extends AbstractExporter<T> {
         private Server server;
         private EndpointFactory endpointFactory;
-
         public DefaultRpcExporter(Provider<T> provider, URL url) {
             super(provider, url);
-
             ProviderMessageRouter requestRouter = initRequestRouter(url);
             endpointFactory =
                     ExtensionLoader.getExtensionLoader(EndpointFactory.class).getExtension(
                             url.getParameter(URLParamType.endpointFactory.getName(), URLParamType.endpointFactory.getValue()));
+            //创建server
             server = endpointFactory.createServer(url, requestRouter);
         }
-
         @SuppressWarnings("unchecked")
         @Override
         public void unexport() {
             String protocolKey = MotanFrameworkUtil.getProtocolKey(url);
             String ipPort = url.getServerPortStr();
-
             Exporter<T> exporter = (Exporter<T>) exporterMap.remove(protocolKey);
-
             if (exporter != null) {
                 exporter.destroy();
             }
-
             synchronized (ipPort2RequestRouter) {
                 ProviderMessageRouter requestRouter = ipPort2RequestRouter.get(ipPort);
 
@@ -227,35 +218,29 @@ public class DefaultRpcProtocol extends AbstractProtocol {
                     requestRouter.removeProvider(provider);
                 }
             }
-
             LoggerUtil.info("DefaultRpcExporter unexport Success: url={}", url);
         }
 
         @Override
         protected boolean doInit() {
+           //打开服务，
             boolean result = server.open();
-
             return result;
         }
-
         @Override
         public boolean isAvailable() {
             return server.isAvailable();
         }
-
         @Override
         public void destroy() {
             endpointFactory.safeReleaseResource(server, url);
             LoggerUtil.info("DefaultRpcExporter destory Success: url={}", url);
         }
-
         private ProviderMessageRouter initRequestRouter(URL url) {
             ProviderMessageRouter requestRouter = null;
             String ipPort = url.getServerPortStr();
-
             synchronized (ipPort2RequestRouter) {
                 requestRouter = ipPort2RequestRouter.get(ipPort);
-
                 if (requestRouter == null) {
                     requestRouter = new ProviderProtectedMessageRouter(provider);
                     ipPort2RequestRouter.put(ipPort, requestRouter);
@@ -263,11 +248,9 @@ public class DefaultRpcProtocol extends AbstractProtocol {
                     requestRouter.addProvider(provider);
                 }
             }
-
             return requestRouter;
         }
     }
-
     /**
      * rpc referer
      *
@@ -284,10 +267,10 @@ public class DefaultRpcProtocol extends AbstractProtocol {
             endpointFactory =
                     ExtensionLoader.getExtensionLoader(EndpointFactory.class).getExtension(
                             url.getParameter(URLParamType.endpointFactory.getName(), URLParamType.endpointFactory.getValue()));
-
+            // 创建client
             client = endpointFactory.createClient(url);
         }
-
+        // 用这个协议的服务，每次调用必经过这个方法
         @Override
         protected Response doCall(Request request) {
             try {
@@ -298,16 +281,13 @@ public class DefaultRpcProtocol extends AbstractProtocol {
                 throw new MotanServiceException("DefaultRpcReferer call Error: url=" + url.getUri(), exception);
             }
         }
-
         @Override
         protected void decrActiveCount(Request request, Response response) {
             if (response == null || !(response instanceof Future)) {
                 activeRefererCount.decrementAndGet();
                 return;
             }
-
             Future future = (Future) response;
-
             future.addListener(new FutureListener() {
                 @Override
                 public void operationComplete(Future future) throws Exception {
@@ -315,11 +295,10 @@ public class DefaultRpcProtocol extends AbstractProtocol {
                 }
             });
         }
-
         @Override
         protected boolean doInit() {
+            // 打开client
             boolean result = client.open();
-
             return result;
         }
 
@@ -327,7 +306,6 @@ public class DefaultRpcProtocol extends AbstractProtocol {
         public boolean isAvailable() {
             return client.isAvailable();
         }
-
         @Override
         public void destroy() {
             endpointFactory.safeReleaseResource(client, url);
