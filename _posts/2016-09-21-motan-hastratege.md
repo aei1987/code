@@ -8,6 +8,7 @@ categories: [Motan源码解读]
 Motan源码解读-容错策略
 
 ### Motan的容错策略
+
 >Motan 在集群调用失败时，提供了两种容错方案，并支持自定义扩展。 高可用集群容错策略在Client端生效，因此需在Client端添加配置 目前支持的集群容错策略有：
 
 - **Failover 失效切换（缺省）**
@@ -27,9 +28,11 @@ Motan源码解读-容错策略
 >快速失败，只发起一次调用，失败立即报错。
 
 ### dubbo的容错策略
+
 motan实际上是dubbo的子集，也可以说是阉割版。一下是dubbo支持的容错策略。
 
 - **1.failover cluster**
+
  >失败自动切换，当出现失败，重试其他服务器（缺省），通常用于读操作，但重试会带来更长的延时，可通过retries=“2”来设置重试次数（不含第一次）
 
 ```
@@ -37,6 +40,7 @@ motan实际上是dubbo的子集，也可以说是阉割版。一下是dubbo支�
 ```
 
 - **2.failfast cluster**
+
 >快速失效，只发起一次调用，失败立即报错。通常用于非幂等性写操作，比如说新增记录
 
 ```
@@ -44,6 +48,7 @@ motan实际上是dubbo的子集，也可以说是阉割版。一下是dubbo支�
 ```
 
 - **3.failsaft cluster**
+
  >失败安全，出现异常时，直接忽略，通常用于写入审计日志等操作
 
 ```
@@ -51,6 +56,7 @@ motan实际上是dubbo的子集，也可以说是阉割版。一下是dubbo支�
 ```
 
 - **4.failback cluster**
+
 > 失败自动恢复，后台记录失败请求，定时重发，通常用于消息通知操作
 
 ```
@@ -58,6 +64,7 @@ motan实际上是dubbo的子集，也可以说是阉割版。一下是dubbo支�
 ```
 
 - **5.forking cluster**
+
  >并行调用多个服务器，只要一个成功即返回。通常用于实时性要求较高的读操作，但需要浪费更多的服务器资源。可通过forks=“2”来设置最大并行数。
 
 ```
@@ -65,6 +72,7 @@ motan实际上是dubbo的子集，也可以说是阉割版。一下是dubbo支�
 ```
 
 ### motan容错策略源代码解读
+
 motan的容错策略尽管支持的不够多，但是对于大部分场景已经够用。而对于一些特殊场景我们可以基于motan 的SPI机制扩展实现自己需要的容错策略。
 
 ![enter image description here](http://zhizus.com/code/images//motan/14612385789967.jpg)
@@ -156,11 +164,14 @@ public class FailoverHaStrategy<T> extends AbstractHaStrategy<T> {
 ```
 
 这段代码花费了些时间理解。
+
 - 1.为什么要将引用放到new ThreadLocal<List<Referer<T>>>()?
+
 >首先单个HAStratege会被多个线程调用，加入ThreadLocal必然是为了保证每个线程持有单独的一份refererList。
 >如果没有ThreadLocal，当其他线程调用selectReferers()会改变refererList，这个时候call方法中的循环会有问题，临界条件可能会抛异常。
 
 - 2.为什么需要selectReferers？
+
 >这个方法可以确保referer列表的实时性，能够实时感知到referer列表的变化。
 
 
