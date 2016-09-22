@@ -175,6 +175,7 @@ public abstract class AbstractProtocol implements Protocol {
 @SpiMeta(name = "motan")
 public class DefaultRpcProtocol extends AbstractProtocol {
     // 多个service可能在相同端口进行服务暴露，因此来自同个端口的请求需要进行路由以找到相应的服务，同时不在该端口暴露的服务不应该被找到
+    // ProviderMessageRouter负责了服务端消息的路由调用，同时也负责了心跳的逻辑
     private Map<String, ProviderMessageRouter> ipPort2RequestRouter = new HashMap<String, ProviderMessageRouter>();
     @Override
     protected <T> Exporter<T> createExporter(Provider<T> provider, URL url) {
@@ -199,7 +200,7 @@ public class DefaultRpcProtocol extends AbstractProtocol {
             endpointFactory =
                     ExtensionLoader.getExtensionLoader(EndpointFactory.class).getExtension(
                             url.getParameter(URLParamType.endpointFactory.getName(), URLParamType.endpointFactory.getValue()));
-            //创建server
+            //创建server，目前motan仅实现了NettyServer（ExtensionLoader出现代表是可以扩展的，可以扩展自己的server）
             server = endpointFactory.createServer(url, requestRouter);
         }
         @SuppressWarnings("unchecked")
@@ -316,6 +317,8 @@ public class DefaultRpcProtocol extends AbstractProtocol {
 
 
 ```
+
+ProviderMessageRouter：这个类也比较核心，call方法处理了Server消息路由调用的逻辑，handle方法理了心跳的逻辑
 
 ----
 后记：看到这里，觉得motan真心不错，虽然功能算不上丰富，但是处处留了扩展的入口。所以还在纠结要不要用motan的可以不用纠结了，即便你需要的功能motan没有覆盖到，
