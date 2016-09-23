@@ -151,10 +151,57 @@ encodeRequest方法的注释很清晰的描述了request 的body部分的序列�
 
 
 到这里motan默认的协议基本分析完，但是还没说到CompresssRpcCodec 压缩的编解码，（这个压缩的类跟协议编解码写到一起，分离出来会不会更好[如果我们能确定哪些地方需要压缩]）
-下一篇会单独就讲压缩部分。
+
+#### motan协议的压缩
+
+数据压缩也是一个完善的rpc框架必备的功能之一，良好的压缩可以减少网络传输数据大小，节省流量，提升响应速度。
+
+##### 压缩算法比较
+
+以下是Google几年前发布的一组测试数据（数据有些老了，有人近期做过测试的话希望能共享出来）：
+<table style="border-collapse:collapse;border-spacing:0;border-color:#999"><tr><th style="font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#fff;background-color:#26ADE4">Algorithm</th><th style="font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#fff;background-color:#26ADE4">% remaining</th><th style="font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#fff;background-color:#26ADE4">Encoding</th><th style="font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#fff;background-color:#26ADE4">Decoding</th></tr><tr><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">GZIP</td><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">13.4%</td><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">21 MB/s</td><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">118 MB/s</td></tr><tr><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">LZO</td><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">20.5%</td><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">135 MB/s</td><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">410 MB/s</td></tr><tr><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">Zippy/Snappy</td><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">22.2%</td><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">172 MB/s</td><td style="font-family:Arial, sans-serif;font-size:14px;padding:10px 20px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:#999;color:#444;background-color:#F7FDFA">409 MB/s</td></tr></table>
+
+
+
+注：来自《HBase: The Definitive Guide》
+其中：
+1）GZIP的压缩率最高，但是其实CPU密集型的，对CPU的消耗比其他算法要多，压缩和解压速度也慢；
+2）LZO的压缩率居中，比GZIP要低一些，但是压缩和解压速度明显要比GZIP快很多，其中解压速度快的更多；
+3）Zippy/Snappy的压缩率最低，而压缩和解压速度要稍微比LZO要快一些。
+
+#### motan中的协议压缩
+
+motan默认支持的压缩是gzip，这块代码比较杂，不支持扩展，如果要实现自己的压缩方式，得重新实现codec部分（继承defaultRpcCodec，重写部分方法也可以）。
+
+``` java
+// 对rpc body进行压缩。
+    public byte[] compress(byte[] org, boolean useGzip, int minGzSize) throws IOException {
+        if (useGzip && org.length > minGzSize) {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            GZIPOutputStream gos = new GZIPOutputStream(outputStream);
+            gos.write(org);
+            gos.finish();
+            gos.flush();
+            gos.close();
+            byte[] ret = outputStream.toByteArray();
+            return ret;
+        } else {
+            return org;
+        }
+    }
+```
+
+就不一一分析motan这块代码，简单总结一下motan compress：
+1）motan压缩的仅仅是rpc 的body部分。header没有压缩的必要。
+2）心跳包没有body，不压缩。
+3） mingzSize("mingzSize", 1000), // 进行gz压缩的最小数据大小。超过此阈值才进行gz压缩
+4）usegz("usegz", false), // 是否开启gzip压缩，这个可以配置
+5）是否开启压缩usegz这个是通过配置来约定的，并未发现有打包到协议里面。如果要解包，首先要知道这个协议是否压缩过。（个人感觉这里不太好，对于motan自己client调用将配置文件拷贝过去即可，但是对于其他的语言就麻烦了，不太友好）
 
 ---
 后记：
+
+motan的设计基本没考虑跨语言的调用。有些可惜。
 
 个人并不是很喜欢motan codec的代码，故不会在这里耗太多时间。
 以后遇到好的codec的代码，再来分享。
